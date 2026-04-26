@@ -1,38 +1,38 @@
 # Agentic Development Framework (ADF)
 
-Un framework agnóstico de LLM diseñado para estructurar el desarrollo de software ejecutado por agentes autónomos (especialmente modelos de 8B-32B). Su objetivo es garantizar código *production-ready* mediante el control estricto del contexto, TDD forzado y validación mecánica, minimizando la intervención humana.
+An LLM-agnostic framework designed to structure software development executed by autonomous agents (especially 8B-32B models). Its goal is to guarantee production-ready code through strict context control, forced TDD, and mechanical validation, minimizing human intervention.
 
-## 🎯 Objetivo
+## 🎯 Objective
 
-Los agentes LLM actuales sufren de memoria a corto plazo, pérdida de contexto (*context drift*) y tendencia a la pereza técnica (evitar refactorización y tests). 
+Current LLM agents suffer from short-term memory, context drift, and a tendency towards technical laziness (avoiding refactoring and tests).
 
-ADF resuelve esto serializando la intención humana en artefactos de texto rígidamente estructurados. No confía en la "buena voluntad" del agente, sino en **gates mecánicos y ejecutables** (`scripts/verify_sprint.py`) que bloquean el avance si el agente no aporta evidencia de TDD (Red/Green) o viola invariantes de arquitectura.
+ADF solves this by serializing human intent into rigidly structured text artifacts. It does not rely on the agent's "goodwill," but on **mechanical and executable gates** (`scripts/verify_sprint.py`) that block progress if the agent fails to provide evidence of TDD (Red/Green) or violates architecture invariants.
 
-## 🏗️ Inspiración y Bases Teóricas
+## 🏗️ Inspiration and Theoretical Foundations
 
-Este framework no nace del vacío. Toma patrones de la ingeniería de software tradicional y los adapta a las limitaciones cognitivas de los LLMs:
+This framework does not emerge from a vacuum. It takes traditional software engineering patterns and adapts them to the cognitive limitations of LLMs:
 
-1. **[Diátaxis](https://diataxis.fr/)**: Se adopta la separación estricta de la documentación por propósito, eliminando tutoriales innecesarios para obligar al agente a operar solo con manuales de referencia (Referencia/How-to).
-2. **[Architecture Decision Records (ADRs) de Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)**: Implementado mediante inmutabilidad y *superseding*. Se extiende creando **Architecture Locks**: reglas ejecutables extraídas de los ADRs para que los agentes las respeten sin tener que leer el historial completo.
-3. **[Patrones de Context Engineering (Karpathy LLM Wiki)](https://github.com/karpathy/LLM-Wiki)**: Se materializa limitando drásticamente los tokens que cada rol (Planner, Executor, Checker) tiene permitido leer, evitando la saturación del contexto.
+1. **[Diátaxis](https://diataxis.fr/)**: Adopts strict separation of documentation by purpose, eliminating unnecessary tutorials to force the agent to operate solely with reference manuals (Reference/How-to).
+2. **[Architecture Decision Records (ADRs) by Michael Nygard](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)**: Implemented via immutability and superseding. Extended by creating **Architecture Locks**: executable rules extracted from ADRs so agents respect them without reading the entire history.
+3. **[Context Engineering Patterns (Karpathy LLM Wiki)](https://github.com/karpathy/LLM-Wiki)**: Materialized by drastically limiting the reading tokens allowed per role (Planner, Executor, Checker), preventing context saturation.
 
-## ⚙️ Mecanismos Core
+## ⚙️ Core Mechanisms
 
-- **Anti-drift**: Uso de *Decision keys* estables e índices cortos (`ARCHITECTURE_LOCKS.md`) que el agente debe respetar al tocar *paths* específicos del repositorio.
-- **Anti-mínimo-esfuerzo**: El agente no puede cerrar una tarea sin aportar evidencia en consola (pegada en el markdown) de que un test falló (RED) por la razón correcta antes de escribir la implementación funcional (GREEN).
-- **Handoffs Deterministas**: El sistema se basa en 3 roles (Planner, Executor, Checker) con matrices de permisos de lectura/escritura (R/W/V) inquebrantables.
+- **Anti-drift**: Use of stable *Decision keys* and short indexes (`ARCHITECTURE_LOCKS.md`) that the agent must respect when touching specific repository *paths*.
+- **Anti-minimal-effort**: The agent cannot close a task without providing console evidence (pasted in the markdown) that a test failed (RED) for the expected reason before writing the functional implementation (GREEN).
+- **Deterministic Handoffs**: The system is based on 3 roles (Planner, Executor, Checker) with unbreakable read/write/verify (R/W/V) permission matrices.
 
-## 📖 Especificación Completa
+## 📖 Full Specification
 
-Lee el documento completo del framework y sus plantillas operacionales aquí:
-👉 **[Especificación del Framework (framework-spec.md)](./framework-spec.md)**
+Read the full framework document and its operational templates here:
+👉 **[Framework Specification (framework-spec.md)](./framework-spec.md)**
 
-## 🤝 Llamado a la Comunidad (Request for Comments)
+## 🤝 Call to the Community (Request for Comments)
 
-Este framework está en fase de propuesta y busco *feedback* de profesionales operando con agentes LLM en entornos reales. Las áreas principales de debate son:
+This framework is in the proposal phase, and I am looking for feedback from professionals operating with LLM agents in real-world environments. The main areas for debate are:
 
-- **Límites de tokens**: ¿Son realistas los umbrales de lectura estipulados para modelos locales de 32B?
-- **Mecanismos de bloqueo**: ¿Existen vectores de evasión donde un agente pueda saltarse el `verify_sprint.py` alterando la salida del test?
-- **Casos límite**: Experiencias intentando forzar refactorizaciones estéticas o de UI bajo este nivel de TDD estricto.
+- **Token limits**: Are the stipulated reading thresholds realistic for 32B local models?
+- **Blocking mechanisms**: Are there evasion vectors where an agent could bypass `verify_sprint.py` by altering the test output?
+- **Edge cases**: Experiences trying to force aesthetic or UI refactoring under this strict TDD level.
 
-Abre un *Issue* para discutir la especificación o envía un PR si tienes mejoras para los scripts de validación.
+Open an Issue to discuss the specification or submit a PR if you have improvements for the validation scripts.
