@@ -1,90 +1,90 @@
-# Framework de Documentacion y Desarrollo Agentico
+# Agentic Documentation and Development Framework
 
-Este framework es agnostico de LLM y esta pensado para proyectos donde el diseno inicial se firma con intervencion humana, pero la implementacion posterior la ejecutan agentes autonomos con poca supervision. El objetivo es que cualquier agente pueda operar con contexto minimo sin contradecir decisiones previas.
+This framework is LLM-agnostic and is designed for projects where the initial design is signed off with human intervention, but the subsequent implementation is executed by autonomous agents with minimal supervision. The goal is for any agent to be able to operate with minimal context without contradicting previous decisions.
 
-## 0. Regla central
+## 0. Core Rule
 
-El repo es la memoria compartida. Todo agente debe poder operar leyendo:
+The repo is the shared memory. Every agent must be able to operate by reading:
 
 1. `README.md`
 2. `AGENTS.md`
 3. `docs/CURRENT.md`
-4. Su `SPRINT-N.md`
-5. Sus `TASK-ID.md`
-6. Los contratos y decisiones citados explicitamente por la tarea
+4. Their `SPRINT-N.md`
+5. Their `TASK-ID.md`
+6. Contracts and decisions explicitly cited by the task
 
-Si una tarea requiere inferir contexto no citado, la tarea esta mal escrita y el Checker debe fallarla.
+If a task requires inferring uncited context, the task is poorly written and the Checker must fail it.
 
-## A. Arbol de carpetas final
+## A. Final Directory Tree
 
-Se usan nombres ASCII (`design`, no `diseno`) para evitar problemas de tooling, shells y modelos pequenos. El contenido puede estar en espanol.
+ASCII names are used (`design`, not `diseño`) to avoid issues with tooling, shells, and smaller models. Content can be in Spanish or English.
 
-| Ruta | Proposito | Lectores | Escritor unico | Mutabilidad | Max tokens | Si se corrompe o se pierde |
+| Path | Purpose | Readers | Single Writer | Mutability | Max tokens | If corrupted or lost |
 |---|---|---:|---|---|---:|---|
-| `README.md` | Indice navegable y explicacion en 90s | humano/planner/executor/checker | humano | editable controlado | 1200 | Se reconstruye desde `docs/CURRENT.md` y roadmap |
-| `AGENTS.md` | Contrato obligatorio para cualquier LLM | planner/executor/checker | humano | inmutable post-firma salvo `CHANGE` | 1800 | Se bloquea trabajo hasta restaurarlo |
-| `docs/` | Raiz documental | todos | humano | estructura estable | n/a | Se restaura desde git/backups |
-| `docs/CURRENT.md` | Estado minimo vivo: fase, sprint activo, decisiones activas | todos | planner | editable append-resumido | 1500 | Se reconstruye desde sprint/decisiones |
-| `docs/design/` | Diseno firmado de Fase 1 | humano/planner/checker | humano | inmutable post-firma | n/a | Se bloquean cambios mayores |
-| `docs/design/DESIGN.md` | Diseno funcional y tecnico completo, dividido por secciones | humano/planner/checker | humano | inmutable post-firma | 3500 | Sprint no puede iniciar |
-| `docs/design/SIGNOFF.md` | Firma humana de alcance, restricciones y aceptacion | humano/checker | humano | append-only | 1000 | No hay baseline valido |
-| `docs/decisions/` | ADRs | planner/checker/executor si citado | planner | append-only | n/a | Se usa indice como recuperacion parcial |
-| `docs/decisions/DECISION-NNN.md` | Decision arquitectonica atomica | todos si citado | planner | append-only; supersede, no editar | 1200 | Si esta citada, tarea bloqueada |
-| `docs/decisions/INDEX.md` | Registro corto de decisiones activas/superadas | todos | checker | generado/validado | 1800 | Se regenera desde ADRs |
-| `docs/guardrails/` | Reglas compactas derivadas de decisiones | planner/executor/checker | checker | generado/validado | n/a | Se regenera desde ADRs |
-| `docs/guardrails/ARCHITECTURE_LOCKS.md` | Invariantes activas que ningun sprint puede contradecir | todos | checker | generado desde ADRs | 1500 | Executor no puede empezar |
-| `docs/implementation/` | Planes ejecutables por sprint | planner/executor/checker | planner | append-only por sprint | n/a | Se restaura desde tareas |
-| `docs/implementation/ROADMAP.md` | Fases previstas, no compromiso detallado | humano/planner | planner | editable por cambio aprobado | 1500 | No bloquea tareas activas |
-| `docs/implementation/SPRINT-N.md` | Plan cerrado del sprint | todos | planner | inmutable tras handoff | 2200 | Sprint no se puede cerrar |
-| `docs/tasks/` | Tareas atomicas ejecutables por modelos pequenos | executor/checker | planner | executor solo completa evidencias | n/a | Tarea bloqueada |
-| `docs/tasks/TASK-ID.md` | Unidad de trabajo con contexto, TDD, paths, gates | executor/checker | planner | campos de evidencia editables | 2500 | No ejecutable |
-| `docs/changes/` | Cambios sobre baseline firmado | humano/planner/checker | planner | append-only | n/a | Cambios mayores bloqueados |
-| `docs/changes/CHANGE-NNN.md` | Solicitud/aprobacion de cambio menor/mayor/breaking | humano/planner/checker | planner | append-only con firma | 1200 | No se puede alterar diseno/ADR |
-| `docs/testing/` | Estrategia y contratos de validacion | planner/executor/checker | checker | editable con cambio aprobado | n/a | Checker usa tests existentes y falla cobertura nueva |
-| `docs/testing/TEST_STRATEGY.md` | Piramide, comandos, minimos por tipo de cambio | todos | checker | editable por `CHANGE` | 1500 | Sprint no puede cerrar |
-| `docs/testing/ACCEPTANCE.md` | Criterios globales de aceptacion | humano/planner/checker | humano | inmutable post-firma | 1500 | Cierre bloqueado |
-| `docs/checks/` | Evidencias de verificacion | checker | checker | append-only | n/a | Se rerunean checks |
-| `docs/checks/CHECK-SPRINT-N.md` | Resultado del Checker | humano/checker | checker | append-only | 1500 | Sprint no cerrado |
-| `scripts/verify_sprint.py` | Gate local verificable | checker/planner | checker | editable con test propio | 2000 | Cierre manual invalido |
-| `scripts/verify_docs.py` | Valida enlaces, ADRs, cambios, locks | checker | checker | editable con test propio | 2000 | Drift no detectable |
+| `README.md` | Navigable index and 90s pitch | human/planner/executor/checker | human | controlled editable | 1200 | Rebuilt from `docs/CURRENT.md` and roadmap |
+| `AGENTS.md` | Mandatory contract for any LLM | planner/executor/checker | human | immutable post-sign-off except `CHANGE` | 1800 | Work blocked until restored |
+| `docs/` | Document root | all | human | stable structure | n/a | Restored from git/backups |
+| `docs/CURRENT.md` | Minimum living state: phase, active sprint, active decisions | all | planner | editable append-summarized | 1500 | Rebuilt from sprint/decisions |
+| `docs/design/` | Signed Phase 1 design | human/planner/checker | human | immutable post-sign-off | n/a | Major changes blocked |
+| `docs/design/DESIGN.md` | Full functional and technical design, divided by sections | human/planner/checker | human | immutable post-sign-off | 3500 | Sprint cannot start |
+| `docs/design/SIGNOFF.md` | Human sign-off on scope, constraints, and acceptance | human/checker | human | append-only | 1000 | No valid baseline exists |
+| `docs/decisions/` | ADRs | planner/checker/executor if cited | planner | append-only | n/a | Index used as partial recovery |
+| `docs/decisions/DECISION-NNN.md` | Atomic architectural decision | all if cited | planner | append-only; supersede, do not edit | 1200 | If cited, task blocked |
+| `docs/decisions/INDEX.md` | Short log of active/superseded decisions | all | checker | generated/validated | 1800 | Regenerated from ADRs |
+| `docs/guardrails/` | Compact rules derived from decisions | planner/executor/checker | checker | generated/validated | n/a | Regenerated from ADRs |
+| `docs/guardrails/ARCHITECTURE_LOCKS.md` | Active invariants that no sprint can contradict | all | checker | generated from ADRs | 1500 | Executor cannot start |
+| `docs/implementation/` | Executable sprint plans | planner/executor/checker | planner | append-only per sprint | n/a | Restored from tasks |
+| `docs/implementation/ROADMAP.md` | Planned phases, not a detailed commitment | human/planner | planner | editable via approved change | 1500 | Does not block active tasks |
+| `docs/implementation/SPRINT-N.md` | Closed sprint plan | all | planner | immutable post-handoff | 2200 | Sprint cannot close |
+| `docs/tasks/` | Atomic tasks executable by small models | executor/checker | planner | executor only completes evidence fields | n/a | Task blocked |
+| `docs/tasks/TASK-ID.md` | Work unit with context, TDD, paths, gates | executor/checker | planner | evidence fields editable | 2500 | Not executable |
+| `docs/changes/` | Changes to signed baseline | human/planner/checker | planner | append-only | n/a | Major changes blocked |
+| `docs/changes/CHANGE-NNN.md` | Minor/major/breaking change request/approval | human/planner/checker | planner | append-only with signature | 1200 | Cannot alter design/ADR |
+| `docs/testing/` | Strategy and validation contracts | planner/executor/checker | checker | editable via approved change | n/a | Checker uses existing tests and fails new coverage |
+| `docs/testing/TEST_STRATEGY.md` | Pyramid, commands, minimums per change type | all | checker | editable via `CHANGE` | 1500 | Sprint cannot close |
+| `docs/testing/ACCEPTANCE.md` | Global acceptance criteria | human/planner/checker | human | immutable post-sign-off | 1500 | Closure blocked |
+| `docs/checks/` | Verification evidence | checker | checker | append-only | n/a | Checks re-run |
+| `docs/checks/CHECK-SPRINT-N.md` | Checker result | human/checker | checker | append-only | 1500 | Sprint not closed |
+| `scripts/verify_sprint.py` | Verifiable local gate | checker/planner | checker | editable with own test | 2000 | Manual closure invalid |
+| `scripts/verify_docs.py` | Validates links, ADRs, changes, locks | checker | checker | editable with own test | 2000 | Drift not detectable |
 
-## B. Plantillas reales y copiables
+## B. Real and Ready-to-copy Templates
 
 ### `README.md`
 
 ```markdown
 # {{PROJECT_NAME}}
 
-## Que es
-Sistema: {{PROJECT_NAME}}.
-Usuario principal: {{PRIMARY_USER_ROLE}}.
-Resultado observable: {{ONE_SENTENCE_OUTCOME}}.
+## What it is
+System: {{PROJECT_NAME}}.
+Primary user: {{PRIMARY_USER_ROLE}}.
+Observable outcome: {{ONE_SENTENCE_OUTCOME}}.
 
-## Estado actual
-Fase activa: {{PHASE_NUMBER}}.
-Sprint activo: {{SPRINT_NUMBER_OR_NONE}}.
-Baseline firmado: `docs/design/SIGNOFF.md`.
-Resumen vivo: `docs/CURRENT.md`.
+## Current state
+Active phase: {{PHASE_NUMBER}}.
+Active sprint: {{SPRINT_NUMBER_OR_NONE}}.
+Signed baseline: `docs/design/SIGNOFF.md`.
+Living summary: `docs/CURRENT.md`.
 
-## Leer en 90 segundos
-1. `AGENTS.md` para reglas obligatorias.
-2. `docs/CURRENT.md` para estado actual.
-3. `docs/guardrails/ARCHITECTURE_LOCKS.md` para restricciones no negociables.
-4. Sprint activo en `docs/implementation/SPRINT-{{NNN}}.md`.
+## Read in 90 seconds
+1. `AGENTS.md` for mandatory rules.
+2. `docs/CURRENT.md` for current state.
+3. `docs/guardrails/ARCHITECTURE_LOCKS.md` for non-negotiable constraints.
+4. Active sprint in `docs/implementation/SPRINT-{{NNN}}.md`.
 
-## Mapa de documentacion
-- Diseno firmado: `docs/design/DESIGN.md`
-- Decisiones: `docs/decisions/INDEX.md`
-- Implementacion: `docs/implementation/`
-- Tareas: `docs/tasks/`
+## Documentation map
+- Signed design: `docs/design/DESIGN.md`
+- Decisions: `docs/decisions/INDEX.md`
+- Implementation: `docs/implementation/`
+- Tasks: `docs/tasks/`
 - Testing: `docs/testing/`
-- Cambios aprobados: `docs/changes/`
+- Approved changes: `docs/changes/`
 
-## Comandos estandar
-Instalar: `{{INSTALL_COMMAND}}`
-Tests rapidos: `{{FAST_TEST_COMMAND}}`
-Tests completos: `{{FULL_TEST_COMMAND}}`
-Verificar sprint: `python scripts/verify_sprint.py docs/implementation/SPRINT-{{NNN}}.md`
+## Standard commands
+Install: `{{INSTALL_COMMAND}}`
+Fast tests: `{{FAST_TEST_COMMAND}}`
+Full tests: `{{FULL_TEST_COMMAND}}`
+Verify sprint: `python scripts/verify_sprint.py docs/implementation/SPRINT-{{NNN}}.md`
 ```
 
 ### `AGENTS.md`
@@ -92,46 +92,46 @@ Verificar sprint: `python scripts/verify_sprint.py docs/implementation/SPRINT-{{
 ```markdown
 # AGENTS.md
 
-## Contrato obligatorio
+## Mandatory Contract
 
-Este repo se trabaja con Planner, Executor y Checker. Ningun agente puede saltarse su rol.
+This repo is worked on using Planner, Executor, and Checker. No agent can skip its role.
 
-## Reglas no negociables
+## Non-negotiable Rules
 
-1. TDD red/green obligatorio para todo cambio de comportamiento.
-2. YAGNI: no crear abstracciones, servicios, colas, adapters ni configuraciones no requeridas por una tarea.
-3. DRY: si aparece la tercera repeticion semantica, detenerse y proponer refactor dentro de la tarea o abrir cambio.
-4. Ningun agente contradice `docs/guardrails/ARCHITECTURE_LOCKS.md`.
-5. Ningun agente edita documentos fuera de su permiso R/W/V.
-6. Si falta contexto, el Executor debe marcar `BLOCKED_CONTEXT_MISSING`, no inferir.
-7. Todo cambio de diseno firmado requiere `CHANGE-NNN.md`.
-8. Todo cambio de decision activa requiere ADR nuevo que supersede al anterior.
+1. Red/green TDD mandatory for every behavior change.
+2. YAGNI: Do not create abstractions, services, queues, adapters, or configurations not required by a task.
+3. DRY: If a semantic repetition occurs for the third time, stop and propose a refactoring within the task or open a change.
+4. No agent contradicts `docs/guardrails/ARCHITECTURE_LOCKS.md`.
+5. No agent edits documents outside its R/W/V permission scope.
+6. If context is missing, the Executor must mark `BLOCKED_CONTEXT_MISSING`, do not infer.
+7. Every signed design change requires `CHANGE-NNN.md`.
+8. Every active decision change requires a new ADR that supersedes the previous one.
 
-## Lectura maxima por rol
+## Maximum Reading per Role
 
 Planner:
-- Debe leer `README.md`, `AGENTS.md`, `docs/CURRENT.md`, `docs/decisions/INDEX.md`, `docs/guardrails/ARCHITECTURE_LOCKS.md`.
-- Puede leer maximo 3 documentos de diseno adicionales por sprint.
-- Puede leer maximo 2 sprints anteriores completos.
+- Must read `README.md`, `AGENTS.md`, `docs/CURRENT.md`, `docs/decisions/INDEX.md`, `docs/guardrails/ARCHITECTURE_LOCKS.md`.
+- Can read a maximum of 3 additional design documents per sprint.
+- Can read a maximum of 2 previous complete sprints.
 
 Executor:
-- Debe leer `AGENTS.md`, `docs/CURRENT.md`, su `SPRINT-N.md`, su `TASK-ID.md`, y ADRs citadas.
-- No debe leer el repo entero.
-- No debe tocar `docs/design/`, `docs/decisions/`, `docs/changes/`.
+- Must read `AGENTS.md`, `docs/CURRENT.md`, their `SPRINT-N.md`, their `TASK-ID.md`, and cited ADRs.
+- Must not read the entire repo.
+- Must not touch `docs/design/`, `docs/decisions/`, `docs/changes/`.
 
 Checker:
-- Debe leer `AGENTS.md`, `SPRINT-N.md`, tareas del sprint, diff de archivos modificados, tests declarados y ADRs citadas.
-- Valida, no implementa features.
+- Must read `AGENTS.md`, `SPRINT-N.md`, sprint tasks, diff of modified files, declared tests, and cited ADRs.
+- Validates, does not implement features.
 
-## Regla de bloqueo
+## Blocking Rule
 
-Usar exactamente una de estas marcas:
+Use exactly one of these marks:
 - `BLOCKED_CONTEXT_MISSING`
 - `BLOCKED_DECISION_CONFLICT`
 - `BLOCKED_TEST_UNCLEAR`
 - `BLOCKED_SCOPE_TOO_LARGE`
 
-Toda marca debe incluir archivo, seccion y pregunta concreta.
+Every mark must include the file, section, and specific question.
 ```
 
 ### `docs/design/DESIGN.md`
@@ -145,56 +145,56 @@ Design version: {{DESIGN_VERSION}}
 Human owner: {{HUMAN_OWNER}}
 Signed in: `docs/design/SIGNOFF.md`
 
-## 1. Objetivo
-Resultado de negocio: {{BUSINESS_OUTCOME}}
-Usuarios incluidos: {{IN_SCOPE_USERS}}
-Usuarios excluidos: {{OUT_OF_SCOPE_USERS}}
+## 1. Objective
+Business outcome: {{BUSINESS_OUTCOME}}
+In-scope users: {{IN_SCOPE_USERS}}
+Out-of-scope users: {{OUT_OF_SCOPE_USERS}}
 
-## 2. Alcance firmado
-Incluido:
+## 2. Signed Scope
+Included:
 - {{IN_SCOPE_CAPABILITY_1}}
 - {{IN_SCOPE_CAPABILITY_2}}
 
-Excluido explicitamente:
+Explicitly excluded:
 - {{OUT_OF_SCOPE_CAPABILITY_1}}
 - {{OUT_OF_SCOPE_CAPABILITY_2}}
 
-## 3. Dominio
-Entidades:
-- {{ENTITY_NAME}}: campos obligatorios={{FIELDS}}, invariantes={{INVARIANTS}}
+## 3. Domain
+Entities:
+- {{ENTITY_NAME}}: required fields={{FIELDS}}, invariants={{INVARIANTS}}
 
-Reglas:
-- {{RULE_ID}}: {{RULE_STATEMENT}}, fuente={{SOURCE}}
+Rules:
+- {{RULE_ID}}: {{RULE_STATEMENT}}, source={{SOURCE}}
 
 ## 4. Interfaces
 API/UI/CLI:
 - Contract ID: {{CONTRACT_ID}}
 - Operation: {{OPERATION_NAME}}
-- Input valido: {{VALID_INPUT_SHAPE}}
-- Output valido: {{VALID_OUTPUT_SHAPE}}
-- Errores esperados: {{ERROR_CODES}}
+- Valid input: {{VALID_INPUT_SHAPE}}
+- Valid output: {{VALID_OUTPUT_SHAPE}}
+- Expected errors: {{ERROR_CODES}}
 
-## 5. Datos
-Persistencia: {{PERSISTENCE_CHOICE}}
-Migraciones requeridas: {{YES_NO}}
-Datos sensibles: {{SENSITIVE_DATA_CLASSES}}
+## 5. Data
+Persistence: {{PERSISTENCE_CHOICE}}
+Migrations required: {{YES_NO}}
+Sensitive data: {{SENSITIVE_DATA_CLASSES}}
 
-## 6. Restricciones
-Rendimiento: {{PERFORMANCE_LIMIT}}
-Seguridad: {{SECURITY_LIMIT}}
-Operacion: {{OPERATIONS_LIMIT}}
-Coste: {{COST_LIMIT}}
+## 6. Constraints
+Performance: {{PERFORMANCE_LIMIT}}
+Security: {{SECURITY_LIMIT}}
+Operations: {{OPERATIONS_LIMIT}}
+Cost: {{COST_LIMIT}}
 
-## 7. Testing aceptado
-Comando minimo: {{FAST_TEST_COMMAND}}
-Comando completo: {{FULL_TEST_COMMAND}}
-Criterio de aceptacion global: `docs/testing/ACCEPTANCE.md`
+## 7. Accepted Testing
+Minimum command: {{FAST_TEST_COMMAND}}
+Full command: {{FULL_TEST_COMMAND}}
+Global acceptance criteria: `docs/testing/ACCEPTANCE.md`
 
-## 8. Riesgos firmados
-- Riesgo: {{RISK_NAME}}
-  Probabilidad: LOW | MEDIUM | HIGH
-  Impacto: LOW | MEDIUM | HIGH
-  Mitigacion obligatoria: {{MITIGATION}}
+## 8. Signed Risks
+- Risk: {{RISK_NAME}}
+  Probability: LOW | MEDIUM | HIGH
+  Impact: LOW | MEDIUM | HIGH
+  Mandatory mitigation: {{MITIGATION}}
 ```
 
 ### `docs/implementation/SPRINT-N.md`
@@ -209,48 +209,48 @@ Created: {{YYYY-MM-DD}}
 Change class: MINOR | MAJOR | BREAKING
 Authorized by: PLANNER | HUMAN
 
-## Objetivo del sprint
-Outcome verificable: {{OBSERVABLE_OUTCOME}}
+## Sprint Objective
+Verifiable outcome: {{OBSERVABLE_OUTCOME}}
 
-## Lectura obligatoria del Executor
+## Mandatory Reading for Executor
 1. `AGENTS.md`
 2. `docs/CURRENT.md`
 3. `docs/guardrails/ARCHITECTURE_LOCKS.md`
-4. Este archivo
-5. Tarea asignada en `docs/tasks/`
+4. This file
+5. Assigned task in `docs/tasks/`
 
-## Decisiones activas relevantes
+## Relevant Active Decisions
 - {{DECISION_KEY}} -> `docs/decisions/DECISION-{{NNN}}.md`
 
-## Tareas
+## Tasks
 - `docs/tasks/TASK-{{TASK_ID_1}}.md` owner={{EXECUTOR_ROLE}} status=READY
 - `docs/tasks/TASK-{{TASK_ID_2}}.md` owner={{EXECUTOR_ROLE}} status=READY
 
-## Paths permitidos
+## Allowed Paths
 - {{ALLOWED_PATH_PATTERN_1}}
 - {{ALLOWED_PATH_PATTERN_2}}
 
-## Paths prohibidos
+## Forbidden Paths
 - `docs/design/**`
 - `docs/decisions/**`
 - `docs/changes/**`
 - {{FORBIDDEN_PATH_PATTERN}}
 
-## Comandos de validacion
-Red test esperado antes de implementacion: {{RED_TEST_COMMAND}}
-Green test minimo: {{FAST_TEST_COMMAND}}
-Green test completo: {{FULL_TEST_COMMAND}}
+## Validation Commands
+Expected red test before implementation: {{RED_TEST_COMMAND}}
+Minimum green test: {{FAST_TEST_COMMAND}}
+Full green test: {{FULL_TEST_COMMAND}}
 
-## Handoff al Executor
-El Executor puede empezar solo si todas las tareas estan en status `READY` y cada tarea tiene criterios de aceptacion, test rojo esperado, paths permitidos y ADRs relevantes.
+## Handoff to Executor
+The Executor can only start if all tasks are in `READY` status and every task has acceptance criteria, expected red test, allowed paths, and relevant ADRs.
 
-## Handoff al Checker
-El sprint pasa a `CHECKING` cuando todas las tareas estan en `IMPLEMENTED` y contienen evidencia red/green.
+## Handoff to Checker
+The sprint moves to `CHECKING` when all tasks are in `IMPLEMENTED` and contain red/green evidence.
 ```
 
 ### `docs/tasks/TASK-ID.md`
 
-````markdown
+```markdown
 # TASK-{{ID}}
 
 Status: READY | IN_PROGRESS | IMPLEMENTED | CHECK_FAILED | CLOSED | BLOCKED
@@ -258,56 +258,56 @@ Sprint: `docs/implementation/SPRINT-{{NNN}}.md`
 Executor: {{EXECUTOR_ID_OR_ROLE}}
 Change class: MINOR | MAJOR | BREAKING
 
-## Objetivo atomico
-Al terminar esta tarea, sera verdadero: {{SINGLE_VERIFIABLE_STATEMENT}}
+## Atomic Objective
+Upon completing this task, the following will be true: {{SINGLE_VERIFIABLE_STATEMENT}}
 
-## Contexto minimo
-Leer solo:
+## Minimum Context
+Read only:
 - `AGENTS.md`
 - `docs/CURRENT.md`
 - `docs/guardrails/ARCHITECTURE_LOCKS.md`
 - `docs/implementation/SPRINT-{{NNN}}.md`
-- Esta tarea
-- `docs/decisions/DECISION-{{NNN}}.md` porque {{DECISION_REASON}}
+- This task
+- `docs/decisions/DECISION-{{NNN}}.md` because {{DECISION_REASON}}
 
-## Decisiones que toca
+## Decisions Touched
 - Uses: {{DECISION_KEY}}
 - Changes: NONE | `CHANGE-{{NNN}}.md`
 
-## Archivos permitidos
+## Allowed Files
 - {{ALLOWED_FILE_OR_GLOB}}
 
-## Archivos prohibidos
+## Forbidden Files
 - `docs/design/**`
 - `docs/decisions/**`
 - `docs/changes/**`
 - {{TASK_SPECIFIC_FORBIDDEN_GLOB}}
 
-## TDD obligatorio
-Test rojo que debe fallar primero:
-- Archivo de test: {{TEST_FILE}}
-- Nombre del test: {{TEST_NAME}}
-- Comando: {{RED_TEST_COMMAND}}
-- Motivo exacto del fallo esperado: {{EXPECTED_FAILURE_REASON}}
+## Mandatory TDD
+Red test that must fail first:
+- Test file: {{TEST_FILE}}
+- Test name: {{TEST_NAME}}
+- Command: {{RED_TEST_COMMAND}}
+- Exact expected failure reason: {{EXPECTED_FAILURE_REASON}}
 
-Evidencia red pegada por Executor:
+Red evidence pasted by Executor:
 ```text
 PENDING_RED_OUTPUT
 ```
 
-Implementacion minima permitida:
+Minimum allowed implementation:
 - {{MINIMAL_IMPLEMENTATION_BOUNDARY}}
 
-Tests green requeridos:
+Required green tests:
 - {{FAST_TEST_COMMAND}}
 - {{FULL_OR_TARGETED_TEST_COMMAND}}
 
-Evidencia green pegada por Executor:
+Green evidence pasted by Executor:
 ```text
 PENDING_GREEN_OUTPUT
 ```
 
-## Casos obligatorios
+## Mandatory Cases
 Happy path:
 - {{HAPPY_PATH_ASSERTION}}
 
@@ -318,30 +318,30 @@ Edge cases:
 Negative cases:
 - {{NEGATIVE_CASE_1}}
 
-## Anti-minimo-esfuerzo
-El Executor debe completar:
-- [ ] Existe test rojo antes de codigo productivo.
-- [ ] El test falla por la razon esperada, no por error de sintaxis/config.
-- [ ] Cada criterio de aceptacion tiene al menos una asercion.
-- [ ] No se anadieron abstracciones fuera del objetivo atomico.
-- [ ] No se duplico logica existente; si hay duplicacion, indicar archivo y justificacion.
-- [ ] No se tocaron archivos prohibidos.
-- [ ] No quedan `TODO`, `FIXME`, `PLACEHOLDER` ni skips nuevos.
+## Anti-minimal-effort
+The Executor must complete:
+- [ ] Red test exists before production code.
+- [ ] Test fails for the expected reason, not due to syntax/config errors.
+- [ ] Every acceptance criterion has at least one assertion.
+- [ ] No abstractions were added outside the atomic objective.
+- [ ] Existing logic was not duplicated; if duplication exists, indicate file and justification.
+- [ ] Forbidden files were not touched.
+- [ ] No new `TODO`, `FIXME`, `PLACEHOLDER`, or skips remain.
 
-## Criterios de aceptacion
+## Acceptance Criteria
 - AC1: {{ASSERTABLE_ACCEPTANCE_CRITERION}}
 - AC2: {{ASSERTABLE_ACCEPTANCE_CRITERION}}
 
-## Notas del Executor
-Archivos cambiados:
+## Executor Notes
+Changed files:
 - PENDING_CHANGED_FILE_LIST
 
-Decisiones tomadas dentro de la tarea:
+Decisions made within the task:
 - NONE
 
-Bloqueos:
+Blockers:
 - NONE
-````
+```
 
 ### `docs/changes/CHANGE-NNN.md`
 
@@ -355,34 +355,34 @@ Approver required: PLANNER | HUMAN
 Approved by: {{APPROVER_ID}}
 Date: {{YYYY-MM-DD}}
 
-## Cambio solicitado
-Cambiar desde: {{CURRENT_SIGNED_BEHAVIOR_OR_DECISION}}
-Cambiar hacia: {{NEW_BEHAVIOR_OR_DECISION}}
+## Requested Change
+Change from: {{CURRENT_SIGNED_BEHAVIOR_OR_DECISION}}
+Change to: {{NEW_BEHAVIOR_OR_DECISION}}
 
-## Motivo
-Razon operativa: {{CONCRETE_REASON}}
-Coste de no hacerlo: {{CONCRETE_RISK}}
+## Reason
+Operational reason: {{CONCRETE_REASON}}
+Cost of not doing it: {{CONCRETE_RISK}}
 
-## Impacto
-Diseno firmado afectado:
+## Impact
+Signed design affected:
 - `docs/design/DESIGN.md#{{SECTION_ID}}` | NONE
 
-Decisiones afectadas:
+Decisions affected:
 - `docs/decisions/DECISION-{{NNN}}.md` | NONE
 
-Contratos afectados:
+Contracts affected:
 - {{CONTRACT_ID}} | NONE
 
-Datos/migraciones:
+Data/migrations:
 - NONE | {{MIGRATION_ID}}
 
-## Accion obligatoria
-- [ ] Si cambia diseno firmado, actualizar version y `SIGNOFF.md`.
-- [ ] Si cambia ADR activa, crear ADR nueva con `Supersedes`.
-- [ ] Si cambia contrato publico, clasificar como BREAKING.
-- [ ] Si cambia testing, actualizar `docs/testing/`.
+## Mandatory Action
+- [ ] If changing signed design, update version and `SIGNOFF.md`.
+- [ ] If changing active ADR, create new ADR with `Supersedes`.
+- [ ] If changing public contract, classify as BREAKING.
+- [ ] If changing testing strategy, update `docs/testing/`.
 
-## Resultado
+## Outcome
 Applied in sprint: `docs/implementation/SPRINT-{{NNN}}.md`
 Checker report: `docs/checks/CHECK-SPRINT-{{NNN}}.md`
 ```
@@ -400,160 +400,160 @@ Supersedes: NONE | DECISION-{{NNN}}
 Superseded by: NONE | DECISION-{{NNN}}
 Change request: NONE | `docs/changes/CHANGE-{{NNN}}.md`
 
-## Contexto
-Problema concreto: {{PROBLEM_STATEMENT}}
-Restricciones aplicables:
+## Context
+Specific problem: {{PROBLEM_STATEMENT}}
+Applicable constraints:
 - {{CONSTRAINT}}
 
 ## Decision
-Se decide: {{ONE_CLEAR_DECISION}}
+It is decided: {{ONE_CLEAR_DECISION}}
 
-## Consecuencias
-Positivas:
+## Consequences
+Positive:
 - {{POSITIVE_CONSEQUENCE}}
 
-Negativas aceptadas:
+Accepted negative:
 - {{NEGATIVE_CONSEQUENCE}}
 
-## Invariante para ARCHITECTURE_LOCKS
+## Invariant for ARCHITECTURE_LOCKS
 Lock ID: {{LOCK_ID}}
-Regla: {{NON_NEGOTIABLE_RULE}}
-Aplica a paths:
+Rule: {{NON_NEGOTIABLE_RULE}}
+Applies to paths:
 - {{PATH_PATTERN}}
 
-## Como validar
-Checker debe verificar:
+## How to Validate
+Checker must verify:
 - {{VALIDATION_RULE_1}}
 - {{VALIDATION_RULE_2}}
 
-## Alternativas descartadas
-- Alternativa: {{ALTERNATIVE_NAME}}
-  Descartada porque: {{SPECIFIC_REASON}}
+## Discarded Alternatives
+- Alternative: {{ALTERNATIVE_NAME}}
+  Discarded because: {{SPECIFIC_REASON}}
 ```
 
-## C. Flujo Planner -> Executor -> Checker
+## C. Planner -> Executor -> Checker Flow
 
 ### Planner
 
-Lee maximo:
+Reads at most:
 
 1. `README.md`
 2. `AGENTS.md`
 3. `docs/CURRENT.md`
 4. `docs/guardrails/ARCHITECTURE_LOCKS.md`
 5. `docs/decisions/INDEX.md`
-6. Hasta 3 documentos de `docs/design/`
-7. Hasta 2 sprints anteriores
+6. Up to 3 documents from `docs/design/`
+7. Up to 2 previous sprints
 
-Produce:
+Produces:
 
 - `SPRINT-N.md`
-- Uno o mas `TASK-ID.md`
-- `CHANGE-NNN.md` si toca baseline firmado
-- `DECISION-NNN.md` si crea/supersede arquitectura
+- One or more `TASK-ID.md`
+- `CHANGE-NNN.md` if touching signed baseline
+- `DECISION-NNN.md` if creating/superseding architecture
 
-No puede tocar:
+Cannot touch:
 
-- Codigo productivo
-- Evidencia red/green
-- Reportes de Checker
+- Production code
+- Red/green evidence
+- Checker reports
 
-Handoff exacto:
+Exact Handoff:
 
-> Cambiar `SPRINT-N.md` a `PLANNED` y todas sus tareas a `READY`. Si alguna tarea no tiene test rojo esperado, paths permitidos y decisiones relevantes, el handoff es invalido.
+> Change `SPRINT-N.md` to `PLANNED` and all its tasks to `READY`. If any task lacks an expected red test, allowed paths, and relevant decisions, the handoff is invalid.
 
 ### Executor
 
-Lee maximo:
+Reads at most:
 
 1. `AGENTS.md`
 2. `docs/CURRENT.md`
 3. `docs/guardrails/ARCHITECTURE_LOCKS.md`
 4. `SPRINT-N.md`
-5. Su `TASK-ID.md`
-6. ADRs citadas por la tarea
-7. Archivos de codigo permitidos por la tarea
+5. Their `TASK-ID.md`
+6. ADRs cited by the task
+7. Code files allowed by the task
 
-Produce:
+Produces:
 
-- Test rojo
-- Codigo minimo
-- Test green
-- Evidencia pegada en `TASK-ID.md`
-- Lista de archivos cambiados
+- Red test
+- Minimum code
+- Green test
+- Evidence pasted in `TASK-ID.md`
+- List of changed files
 
-No puede tocar:
+Cannot touch:
 
 - `docs/design/**`
 - `docs/decisions/**`
 - `docs/changes/**`
-- `docs/testing/**` salvo que la tarea lo permita explicitamente
+- `docs/testing/**` unless the task explicitly allows it
 
-Handoff exacto:
+Exact Handoff:
 
-> Cambiar tarea a `IMPLEMENTED`, pegar salida red/green, listar archivos modificados y no dejar bloqueos abiertos.
+> Change task status to `IMPLEMENTED`, paste red/green output, list modified files, and leave no open blockers.
 
 ### Checker
 
-Lee maximo:
+Reads at most:
 
 1. `AGENTS.md`
 2. `SPRINT-N.md`
-3. Tareas del sprint
+3. Sprint tasks
 4. `docs/guardrails/ARCHITECTURE_LOCKS.md`
-5. ADRs citadas
-6. Diff de archivos modificados
-7. Tests declarados
+5. Cited ADRs
+6. Diff of modified files
+7. Declared tests
 
-Produce:
+Produces:
 
 - `docs/checks/CHECK-SPRINT-N.md`
-- Actualizacion de `docs/CURRENT.md`
-- Regeneracion/validacion de `docs/decisions/INDEX.md`
-- Regeneracion/validacion de `ARCHITECTURE_LOCKS.md`
+- Update to `docs/CURRENT.md`
+- Regeneration/validation of `docs/decisions/INDEX.md`
+- Regeneration/validation of `ARCHITECTURE_LOCKS.md`
 
-No puede tocar:
+Cannot touch:
 
-- Codigo productivo, salvo que el usuario pida explicitamente fix de CI
-- Diseno firmado
+- Production code, unless the user explicitly requests a CI fix
+- Signed design
 
-Handoff exacto:
+Exact Handoff:
 
-> Si todos los gates pasan, marcar sprint `CLOSED`, tareas `CLOSED`, escribir check report y actualizar `CURRENT.md`.
+> If all gates pass, mark sprint `CLOSED`, tasks `CLOSED`, write check report, and update `CURRENT.md`.
 
-## D. Definicion ejecutable de "sprint cerrado"
+## D. Executable Definition of "Closed Sprint"
 
-Un sprint esta cerrado solo si este comando termina con exit code `0`:
+A sprint is considered closed only if this command finishes with exit code `0`:
 
 ```bash
 python scripts/verify_sprint.py docs/implementation/SPRINT-005.md
 ```
 
-Condiciones verificables:
+Verifiable conditions:
 
-1. `SPRINT-N.md` existe y status=`CHECKING` o `CLOSED`.
-2. Todas las tareas referenciadas existen.
-3. Cada tarea tiene status=`IMPLEMENTED` o `CLOSED`.
-4. Cada tarea contiene evidencia `RED_OUTPUT` distinta de `PENDING_RED_OUTPUT`.
-5. Cada tarea contiene evidencia `GREEN_OUTPUT` distinta de `PENDING_GREEN_OUTPUT`.
-6. Ninguna tarea contiene `TODO`, `FIXME`, `PLACEHOLDER`, `PENDING_`.
-7. Todo archivo modificado coincide con `allowed paths`.
-8. Ningun archivo modificado coincide con `forbidden paths`.
-9. Toda `Decision key` existe en `docs/decisions/INDEX.md`.
-10. Ninguna tarea cambia una decision sin `CHANGE-NNN.md` aprobado.
-11. Si hay `CHANGE` mayor/breaking, tiene aprobacion humana.
-12. Tests declarados fueron ejecutados y su salida esta registrada.
-13. `docs/checks/CHECK-SPRINT-N.md` existe con verdict=`PASS`.
-14. `docs/CURRENT.md` referencia el sprint cerrado.
-15. `ARCHITECTURE_LOCKS.md` esta sincronizado con ADRs aceptadas.
+1. `SPRINT-N.md` exists and status=`CHECKING` or `CLOSED`.
+2. All referenced tasks exist.
+3. Every task has status=`IMPLEMENTED` or `CLOSED`.
+4. Every task contains `RED_OUTPUT` evidence distinct from `PENDING_RED_OUTPUT`.
+5. Every task contains `GREEN_OUTPUT` evidence distinct from `PENDING_GREEN_OUTPUT`.
+6. No task contains `TODO`, `FIXME`, `PLACEHOLDER`, or `PENDING_`.
+7. Every modified file matches `allowed paths`.
+8. No modified file matches `forbidden paths`.
+9. Every `Decision key` exists in `docs/decisions/INDEX.md`.
+10. No task changes a decision without an approved `CHANGE-NNN.md`.
+11. If there is a major/breaking `CHANGE`, it has human approval.
+12. Declared tests were executed and their output is logged.
+13. `docs/checks/CHECK-SPRINT-N.md` exists with verdict=`PASS`.
+14. `docs/CURRENT.md` references the closed sprint.
+15. `ARCHITECTURE_LOCKS.md` is synced with accepted ADRs.
 
-## E. Mecanismo anti-drift
+## E. Anti-drift Mechanism
 
-No basta con "usar ADRs". El mecanismo tiene tres capas.
+"Using ADRs" is not enough. The mechanism relies on three layers.
 
-### 1. Decision key estable
+### 1. Stable Decision Key
 
-Cada ADR aceptada define una `Decision key`, por ejemplo:
+Each accepted ADR defines a `Decision key`, for example:
 
 ```text
 EMAIL_PROVIDER_SENDGRID
@@ -561,11 +561,11 @@ AUTH_SESSION_JWT
 DB_POSTGRES_PRIMARY
 ```
 
-Las tareas no citan narrativa larga; citan keys.
+Tasks do not cite long narratives; they cite keys.
 
-### 2. Indice corto obligatorio
+### 2. Mandatory Short Index
 
-`docs/decisions/INDEX.md` contiene solo decisiones activas:
+`docs/decisions/INDEX.md` contains only active decisions:
 
 ```markdown
 # Decision Index
@@ -578,11 +578,11 @@ Las tareas no citan narrativa larga; citan keys.
   superseded_by: NONE
 ```
 
-Esto permite que el sprint 12 lea un archivo corto y no los sprints 1-11.
+This allows sprint 12 to read a short file instead of sprints 1-11.
 
-### 3. Architecture locks generados
+### 3. Generated Architecture Locks
 
-`ARCHITECTURE_LOCKS.md` traduce ADRs a reglas ejecutables por revision:
+`ARCHITECTURE_LOCKS.md` translates ADRs into rules executable via review:
 
 ```markdown
 # Architecture Locks
@@ -598,109 +598,109 @@ Checker validation:
 - Email provider config uses SENDGRID_API_KEY.
 ```
 
-Regla anti-drift:
+Anti-drift rule:
 
-> Si una tarea toca un path cubierto por un lock, debe citar su decision key. Si contradice el lock, debe tener `CHANGE-NNN.md` aprobado y ADR nueva con `Supersedes`.
+> If a task touches a path covered by a lock, it must cite its decision key. If it contradicts the lock, it must have an approved `CHANGE-NNN.md` and a new ADR with `Supersedes`.
 
-## F. Mecanismo anti-minimo-esfuerzo
+## F. Anti-minimal-effort Mechanism
 
-El framework fuerza comportamiento mediante gates, no buena voluntad:
+The framework forces behavior through gates, not goodwill:
 
-1. TDD red/green esta en `TASK-ID.md` y `verify_sprint.py` falla si falta evidencia.
-2. Cada aceptacion tiene que mapearse a test o asercion.
-3. El Executor no puede escribir "he probado manualmente" como sustituto del comando.
-4. El Checker rechaza tareas con `PENDING_`, `TODO`, skips nuevos o archivos prohibidos.
-5. El Planner debe escribir edge cases y negative cases; si no existen, la tarea no esta `READY`.
-6. YAGNI se aplica con "implementacion minima permitida": si el Executor anade infraestructura no listada, falla.
-7. DRY se aplica con declaracion obligatoria de duplicacion; si introduce tercera repeticion sin refactor o justificacion, falla.
-8. Los paths permitidos evitan que el agente "arregle" el problema tocando zonas no autorizadas.
-9. Los locks evitan contradicciones silenciosas con arquitectura previa.
+1. Red/green TDD is in `TASK-ID.md` and `verify_sprint.py` fails if evidence is missing.
+2. Every acceptance criterion must map to a test or assertion.
+3. The Executor cannot write "I tested manually" as a substitute for the command.
+4. The Checker rejects tasks with `PENDING_`, `TODO`, new skips, or forbidden files.
+5. The Planner must write edge cases and negative cases; if they don't exist, the task is not `READY`.
+6. YAGNI is enforced with "minimum allowed implementation": if the Executor adds unlisted infrastructure, it fails.
+7. DRY is enforced with mandatory duplication declaration; if it introduces a third repetition without refactoring or justification, it fails.
+8. Allowed paths prevent the agent from "fixing" the problem by touching unauthorized zones.
+9. Locks prevent silent contradictions with previous architecture.
 
-## G. Matriz R/W/V por documento y rol
+## G. R/W/V Matrix by Document and Role
 
-| Documento | Humano | Planner | Executor | Checker |
+| Document | Human | Planner | Executor | Checker |
 |---|---|---|---|---|
 | `README.md` | R/W/V | R | R | V |
 | `AGENTS.md` | R/W/V | R | R | V |
 | `docs/CURRENT.md` | R | W | R | W/V |
-| `docs/design/DESIGN.md` | R/W/V | R | R si citado | V |
+| `docs/design/DESIGN.md` | R/W/V | R | R if cited | V |
 | `docs/design/SIGNOFF.md` | W/V | R | R | V |
-| `docs/decisions/DECISION-NNN.md` | R/V | W | R si citado | V |
+| `docs/decisions/DECISION-NNN.md` | R/V | W | R if cited | V |
 | `docs/decisions/INDEX.md` | R | R | R | W/V |
 | `docs/guardrails/ARCHITECTURE_LOCKS.md` | R | R | R | W/V |
 | `docs/implementation/ROADMAP.md` | V | W | R | V |
 | `docs/implementation/SPRINT-N.md` | R/V | W | R | V |
-| `docs/tasks/TASK-ID.md` | R | W | W solo evidencias | V |
-| `docs/changes/CHANGE-NNN.md` | W/V si mayor | W | R si citado | V |
+| `docs/tasks/TASK-ID.md` | R | W | W only evidence | V |
+| `docs/changes/CHANGE-NNN.md` | W/V if major | W | R if cited | V |
 | `docs/testing/TEST_STRATEGY.md` | R/V | R | R | W/V |
 | `docs/testing/ACCEPTANCE.md` | W/V | R | R | V |
 | `docs/checks/CHECK-SPRINT-N.md` | R | R | R | W |
 | `scripts/verify_sprint.py` | R | R | R | W/V |
 
-## H. Clasificacion de cambios
+## H. Change Classification
 
-### Menor
+### Minor
 
-Definicion:
+Definition:
 
-- No cambia contrato publico.
-- No cambia datos persistidos.
-- No cambia ADR activa.
-- No cambia alcance firmado.
-- Anade o corrige comportamiento interno esperado.
+- Does not change public contract.
+- Does not change persisted data.
+- Does not change active ADR.
+- Does not change signed scope.
+- Adds or fixes expected internal behavior.
 
-Autoriza: Planner.
+Authorizer: Planner.
 
-Accion:
+Action:
 
-- Crear sprint/tareas.
-- No requiere `CHANGE-NNN.md`, salvo que toque texto firmado.
+- Create sprint/tasks.
+- Does not require `CHANGE-NNN.md`, unless it touches signed text.
 
-### Mayor
+### Major
 
-Definicion:
+Definition:
 
-- Anade capacidad nueva.
-- Anade integracion.
-- Anade tabla/campo persistido compatible.
-- Cambia estrategia de testing.
-- Supersede una ADR sin romper contrato publico.
+- Adds new capability.
+- Adds integration.
+- Adds compatible persisted table/field.
+- Changes testing strategy.
+- Supersedes an ADR without breaking the public contract.
 
-Autoriza: Humano.
+Authorizer: Human.
 
-Accion:
+Action:
 
-- Crear `CHANGE-NNN.md`.
-- Crear o superseder ADR si aplica.
-- Actualizar roadmap y `CURRENT.md`.
+- Create `CHANGE-NNN.md`.
+- Create or supersede ADR if applicable.
+- Update roadmap and `CURRENT.md`.
 
 ### Breaking
 
-Definicion:
+Definition:
 
-- Cambia API publica.
-- Rompe compatibilidad de datos.
-- Elimina comportamiento firmado.
-- Cambia auth, permisos, proveedor critico o contrato operativo.
-- Requiere migracion no reversible.
+- Changes public API.
+- Breaks data compatibility.
+- Removes signed behavior.
+- Changes auth, permissions, critical provider, or operational contract.
+- Requires non-reversible migration.
 
-Autoriza: Humano con firma explicita.
+Authorizer: Human with explicit sign-off.
 
-Accion:
+Action:
 
-- `CHANGE-NNN.md` aprobado.
-- Nueva version de diseno o anexo firmado.
-- ADR nueva con `Supersedes`.
-- Plan de migracion y rollback.
-- Tests de compatibilidad o ruptura esperada.
+- Approved `CHANGE-NNN.md`.
+- New design version or signed annex.
+- New ADR with `Supersedes`.
+- Migration and rollback plan.
+- Compatibility or expected-breakage tests.
 
-## Casos de prueba obligatorios
+## Mandatory Test Cases
 
-### Caso 1 - Fase 1 desde cero
+### Case 1 - Phase 1 from scratch
 
-Proyecto: API REST de gestion de inventario para una tienda pequena.
+Project: Inventory management REST API for a small store.
 
-#### Documentos al final de Fase 1, antes de codigo
+#### Documents at the end of Phase 1, before code
 
 ```text
 inventory-api/
@@ -724,24 +724,24 @@ inventory-api/
         └── ACCEPTANCE.md
 ```
 
-#### Contenido firmado por humano
+#### Human Signed Content
 
-El humano firma:
+The human signs off on:
 
 - `docs/design/DESIGN.md`
 - `docs/design/SIGNOFF.md`
 - `docs/testing/ACCEPTANCE.md`
 - `AGENTS.md`
 
-Ejemplo de decisiones iniciales:
+Example of initial decisions:
 
-- `DECISION-001`: usar REST JSON con versionado `/v1`.
-- `DECISION-002`: usar PostgreSQL como base primaria.
-- `DECISION-003`: autenticacion JWT para endpoints privados.
+- `DECISION-001`: use REST JSON with `/v1` versioning.
+- `DECISION-002`: use PostgreSQL as primary DB.
+- `DECISION-003`: JWT authentication for private endpoints.
 
-#### Que leera el primer agente y en que orden
+#### What the first agent will read and in what order
 
-Primer Planner:
+First Planner:
 
 1. `README.md`
 2. `AGENTS.md`
@@ -751,54 +751,54 @@ Primer Planner:
 6. `docs/decisions/INDEX.md`
 7. `docs/guardrails/ARCHITECTURE_LOCKS.md`
 
-Primer Executor:
+First Executor:
 
 1. `AGENTS.md`
 2. `docs/CURRENT.md`
 3. `docs/implementation/SPRINT-001.md`
-4. Su `docs/tasks/TASK-INV-001.md`
-5. ADRs citadas: por ejemplo `DECISION-001`, `DECISION-002`
+4. Their `docs/tasks/TASK-INV-001.md`
+5. Cited ADRs: for example `DECISION-001`, `DECISION-002`
 
-No lee todo el diseno si la tarea ya extrae el contexto necesario.
+Does not read the entire design if the task already extracts the necessary context.
 
-### Caso 2 - Sprint 5: alertas de stock bajo por email
+### Case 2 - Sprint 5: low stock alerts via email
 
-Estado previo: auth, productos y reportes basicos ya implementados.
+Previous state: auth, products, and basic reports already implemented.
 
-Feature: enviar alertas de stock bajo por email.
+Feature: send low stock alerts via email.
 
-#### Que lee el Planner y por que solo eso
+#### What the Planner reads and why only that
 
-Planner lee:
+Planner reads:
 
-1. `README.md`: confirmar mapa y comandos.
-2. `AGENTS.md`: reglas de rol.
-3. `docs/CURRENT.md`: estado actual y sprint anterior.
-4. `docs/decisions/INDEX.md`: detectar decisiones activas.
-5. `docs/guardrails/ARCHITECTURE_LOCKS.md`: ver restricciones.
-6. `docs/design/DESIGN.md#productos`: entender stock.
-7. `docs/design/DESIGN.md#notificaciones` si existe; si no existe, crea cambio mayor.
-8. `docs/testing/ACCEPTANCE.md`: criterios globales.
+1. `README.md`: confirm map and commands.
+2. `AGENTS.md`: role rules.
+3. `docs/CURRENT.md`: current state and previous sprint.
+4. `docs/decisions/INDEX.md`: detect active decisions.
+5. `docs/guardrails/ARCHITECTURE_LOCKS.md`: view constraints.
+6. `docs/design/DESIGN.md#products`: understand stock.
+7. `docs/design/DESIGN.md#notifications` if it exists; if not, creates a major change.
+8. `docs/testing/ACCEPTANCE.md`: global criteria.
 
-Solo esos porque la feature toca stock, email y testing; no necesita leer auth completa ni reportes completos si sus contratos estan indexados.
+Only those because the feature touches stock, email, and testing; it doesn't need to read full auth or full reports if their contracts are indexed.
 
-#### Que produce el Planner
+#### What the Planner produces
 
-Produce:
+Produces:
 
-- `docs/changes/CHANGE-005.md`, clase `MAJOR`, porque agrega integracion email.
+- `docs/changes/CHANGE-005.md`, `MAJOR` class, because it adds email integration.
 - `docs/decisions/DECISION-004.md`, key `EMAIL_PROVIDER_SENDGRID`.
-- Actualizacion validada de `docs/decisions/INDEX.md`.
-- Actualizacion validada de `docs/guardrails/ARCHITECTURE_LOCKS.md`.
+- Validated update to `docs/decisions/INDEX.md`.
+- Validated update to `docs/guardrails/ARCHITECTURE_LOCKS.md`.
 - `docs/implementation/SPRINT-005.md`.
-- `docs/tasks/TASK-EMAIL-001.md`: adapter de email con test rojo.
-- `docs/tasks/TASK-STOCK-002.md`: deteccion de stock bajo.
-- `docs/tasks/TASK-ALERT-003.md`: integracion evento stock bajo -> email.
-- `docs/tasks/TASK-CHECK-004.md`: pruebas de no duplicar alertas.
+- `docs/tasks/TASK-EMAIL-001.md`: email adapter with red test.
+- `docs/tasks/TASK-STOCK-002.md`: low stock detection.
+- `docs/tasks/TASK-ALERT-003.md`: low stock event -> email integration.
+- `docs/tasks/TASK-CHECK-004.md`: no duplicate alert tests.
 
-#### Que lee el Executor modelo pequeno
+#### What the small model Executor reads
 
-Para `TASK-ALERT-003.md` lee:
+For `TASK-ALERT-003.md` it reads:
 
 1. `AGENTS.md`
 2. `docs/CURRENT.md`
@@ -806,60 +806,60 @@ Para `TASK-ALERT-003.md` lee:
 4. `docs/implementation/SPRINT-005.md`
 5. `docs/tasks/TASK-ALERT-003.md`
 6. `docs/decisions/DECISION-004.md`
-7. Archivos permitidos:
+7. Allowed files:
    - `src/stock/**`
    - `src/email/**`
    - `tests/stock/**`
    - `tests/email/**`
 
-No lee auth, reportes ni sprints 1-4 completos.
+Does not read auth, reports, or full sprints 1-4.
 
-#### Que pasa si en sprint 9 quieren migrar SendGrid a AWS SES
+#### What happens if in sprint 9 they want to migrate SendGrid to AWS SES
 
-No se edita `DECISION-004`.
+`DECISION-004` is not edited.
 
-Se crea:
+It is created:
 
-- `docs/changes/CHANGE-009.md`, clase `MAJOR` si la interfaz interna se mantiene; `BREAKING` si cambia contrato publico/configuracion operativa.
-- `docs/decisions/DECISION-012.md`, key `EMAIL_PROVIDER_AWS_SES`, con `Supersedes: DECISION-004`.
-- `DECISION-004` pasa a `SUPERSEDED`.
-- `docs/decisions/INDEX.md` reemplaza key activa.
-- `ARCHITECTURE_LOCKS.md` cambia de "no AWS SES" a "usar AWS SES via adapter".
+- `docs/changes/CHANGE-009.md`, `MAJOR` class if the internal interface is maintained; `BREAKING` if public contract/operational config changes.
+- `docs/decisions/DECISION-012.md`, key `EMAIL_PROVIDER_AWS_SES`, with `Supersedes: DECISION-004`.
+- `DECISION-004` becomes `SUPERSEDED`.
+- `docs/decisions/INDEX.md` replaces the active key.
+- `ARCHITECTURE_LOCKS.md` changes from "no AWS SES" to "use AWS SES via adapter".
 
-Checker de sprint 9 falla si queda codigo productivo usando SendGrid fuera de una migracion explicita o si una tarea usa la key antigua.
+Sprint 9 Checker fails if production code using SendGrid remains outside an explicit migration or if a task uses the old key.
 
-#### Como el Checker valida sin leer el repo entero
+#### How the Checker validates without reading the entire repo
 
-Checker lee:
+Checker reads:
 
 1. `SPRINT-005.md`
-2. Tareas del sprint
-3. Diff de archivos modificados
+2. Sprint tasks
+3. Diff of modified files
 4. `DECISION-004.md`
 5. `ARCHITECTURE_LOCKS.md`
-6. Tests declarados
+6. Declared tests
 
-Valida:
+Validates:
 
-- Hay test rojo para stock bajo.
-- Hay test rojo para envio email.
-- No se envian emails duplicados para la misma condicion.
-- El proveedor email aparece detras del adapter.
-- No hay cliente SendGrid fuera de `src/email/**`.
-- Los comandos green estan pegados.
-- Los paths tocados son los permitidos.
+- There is a red test for low stock.
+- There is a red test for sending email.
+- Emails are not duplicated for the same condition.
+- The email provider is behind the adapter.
+- There is no SendGrid client outside `src/email/**`.
+- Green commands are pasted.
+- Touched paths are the allowed ones.
 
-## Auto-critica obligatoria
+## Mandatory Self-Critique
 
-1. El framework depende de disciplina documental local. Se rompe si el equipo acepta merges sin ejecutar `verify_sprint.py`; en ese escenario, los locks existen pero no protegen nada.
+1. The framework relies on local documentation discipline. It breaks if the team accepts merges without running `verify_sprint.py`; in that scenario, the locks exist but protect nothing.
 
-2. El limite de 4000 tokens por archivo obliga a resumir. Se rompe en dominios regulados o cientificos donde una decision necesita mucha evidencia; solucion parcial: partir ADRs por decision y mover evidencia larga a anexos no obligatorios.
+2. The 4000 token limit per file forces summarization. It breaks in regulated or scientific domains where a decision requires extensive evidence; partial solution: split ADRs per decision and move long evidence to non-mandatory annexes.
 
-3. La validacion anti-drift no entiende semantica profunda del codigo. Se rompe si un agente contradice una decision con una abstraccion indirecta que no coincide con paths o patrones; mitigacion: locks con paths precisos, tests de arquitectura y revision humana para cambios mayores.
+3. Anti-drift validation does not understand deep code semantics. It breaks if an agent contradicts a decision with an indirect abstraction that doesn't match paths or patterns; mitigation: locks with precise paths, architecture tests, and human review for major changes.
 
-## Referencias
+## References
 
-- Diataxis: tomo la separacion por tipo de necesidad del lector; descarto documentacion extensa que obligue al Executor a leer tutoriales.
-- AGENTS.md: tomo el contrato operativo en raiz del repo; descarto instrucciones largas no verificables.
-- Karpathy LLM Wiki: tomo la idea de contexto pequeno, explicito y orientado a agentes; descarto depender de razonamiento implicito del modelo.
-- ADRs de Michael Nygard: tomo decisiones append-only con consecuencias; descarto ADRs como archivo historico pasivo sin locks ni validacion.
+- Diátaxis: I take the separation by reader's need type; discard extensive documentation that forces the Executor to read tutorials.
+- AGENTS.md: I take the operational contract at the repo root; discard long non-verifiable instructions.
+- Karpathy LLM Wiki: I take the idea of small, explicit, agent-oriented context; discard relying on the model's implicit reasoning.
+- Michael Nygard's ADRs: I take append-only decisions with consequences; discard ADRs as a passive historical file without locks or validation.
